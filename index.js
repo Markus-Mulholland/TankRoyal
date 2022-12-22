@@ -1,7 +1,25 @@
-import { game } from './game.js'
+import { game } from './frame/game.js'
 
-window.preload = () => {
-    game().init()
+window.preload = async () => {
+    await game().init()
+    game().registerRecurringPhysics([
+        ...game().state().tank.recurring_physics
+    ])
+
+    game().registerRecurringRendering([
+        () => background(200),
+        ...game().state().tank.recurring_rendering,
+        ...game().state().barrel.recurring_rendering
+    ])
+
+    game().registerKeyBindings({
+        W: [
+            ...game().state().bindings.W
+        ],
+        S: [
+
+        ]
+    })
 }
 
 window.setup = () => {
@@ -12,12 +30,4 @@ window.setup = () => {
 
 window.draw = () => {
     game().loop()
-}
-
-window.keyPressed = () => {
-    game().keylogger.keyPressed(key)
-}
-
-window.keyReleased = () => {
-    game().keylogger.keyReleased(key)
 }
