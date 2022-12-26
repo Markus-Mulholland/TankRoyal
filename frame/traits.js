@@ -4,11 +4,14 @@ export const hasLocation = () => {
     }
 }
 
-export const hasMovement = () => {
+export const hasMovement = (
+    acc = createVector(0, 0),
+    vel = createVector(0, 0),
+    loc = createVector(0, 0)) => {
     return {
-        loc: createVector(0, 0),
-        vel: createVector(0, 0),
-        acc: createVector(0, 0),
+        loc: loc,
+        vel: vel,
+        acc: acc,
     }
 }
 
@@ -21,5 +24,11 @@ export const hasPhysics = (physics_jobs = []) => {
 export const renders = (render_jobs = []) => {
     return {
         recurring_rendering: render_jobs,
+    }
+}
+
+export const hasKeyBindings = (bindings = {}) => {
+    return {
+        bindings: bindings,
     }
 }

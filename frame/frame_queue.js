@@ -7,12 +7,6 @@ export const frame_queue = () => {
             this.queue =
                 this.queue.concat(this.recurring_jobs)
         },
-        dispatchJob: function (func, shift = false) {
-            let job = this.job(func)
-
-            if (shift) this.queue.unshift(job)
-            else this.queue.push(job)
-        },
         run: function () {
             this.dispatchRecurringJobs()
             this.queue.forEach(job => {
@@ -27,5 +21,12 @@ export const registerRecurringJobs = (frame_queue, jobs) => {
     frame_queue.recurring_jobs = [
         ...jobs.map(func => frame_queue.job(func)),
     ]
+}
+
+export const dispatchJob = (frame_queue, func, shift = false) => {
+    let job = frame_queue.job(func)
+
+    if (shift) frame_queue.queue.unshift(job)
+    else frame_queue.queue.push(job)
 }
 

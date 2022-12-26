@@ -1,31 +1,35 @@
-import {frame_queue, registerRecurringJobs} from './frame_queue.js'
+import {game} from "./game";
 
 let keylogger_obj = {
     init() {
         return new Promise(async (resolve, reject) => {
+            keylogger().accepted_keys = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
             keylogger().pressed_keys = []
 
             keylogger().bindings = {
-                W: frame_queue(),
-                S: frame_queue(),
-                A: frame_queue(),
-                D: frame_queue(),
-                M_U: frame_queue(),
-                M_D: frame_queue()
+                W_D: [],
+                S_D: [],
+                A_D: [],
+                D_D: [],
+                J_D: [],
+                M__D: []
             }
 
-            keylogger().updated = key => {
-                keylogger().bindings[key]?.run()
-                // if (keylogger().bindings[key])
+            keylogger().run = () => {
+                keylogger().pressed_keys.forEach(key => {
+                    key += "_D"
+                    if (keylogger().bindings[key]) {
+                        keylogger().bindings[key].forEach(func => func())
+                    }
+                })
             }
 
             keylogger().keyPressed = key => {
                 let upper_key = key.toUpperCase();
-                if (!keylogger().pressed_keys.includes(upper_key) && (upper_key === "W" || upper_key === "S" || upper_key === "A" || upper_key === "D")) {
+                if (!keylogger().pressed_keys.includes(upper_key) && keylogger().accepted_keys.includes(upper_key)) {
                     keylogger().pressed_keys.push(upper_key);
                 }
-
-                keylogger().updated(key)
             }
 
             keylogger().keyReleased = key => {
@@ -34,24 +38,35 @@ let keylogger_obj = {
                     let pressed_key_index = keylogger().pressed_keys.indexOf(upper_key);
                     keylogger().pressed_keys.splice(pressed_key_index, 1);
                 }
-
-                keylogger().updated(key)
             }
 
+            keylogger().mousePressed = () => {
+                let mouse_binding_key = "M_"
+                if (!keylogger().pressed_keys.includes(mouse_binding_key))
+                    keylogger().pressed_keys.push(mouse_binding_key);
+            }
+
+            keylogger().mouseReleased = () => {
+                let mouse_binding_key = "M_"
+                let mouse_binding_key_index = keylogger().pressed_keys.indexOf(mouse_binding_key);
+                keylogger().pressed_keys.splice(mouse_binding_key_index, 1);
+            }
+
+
             window.keyPressed = () => {
-                keylogger().keyPressed(key)
+                game().keylogger().keyPressed(key)
             }
 
             window.keyReleased = () => {
-                keylogger().keyReleased(key)
+                game().keylogger().keyReleased(key)
             }
 
             window.mousePressed = () => {
-                keylogger().mousePressed()
+                game().keylogger().mousePressed()
             }
 
             window.mouseReleased = () => {
-                keylogger().mouseReleased()
+                game().keylogger().mouseReleased()
             }
 
             console.log("%cKeylogger Initialized", "" + "color:cyan; ");
