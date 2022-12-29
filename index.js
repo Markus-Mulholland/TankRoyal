@@ -1,3 +1,7 @@
+//               <==> TankRoyal <==>
+//                    <=>  <=>
+//                     <>  <>
+
 import {game} from './frame/game.js'
 
 window.preload = async () => {
@@ -13,6 +17,29 @@ window.preload = async () => {
         ...game().state().barrel.recurring_rendering,
         ...game().state().HUD.recurring_rendering,
         ...game().state().projectiles.recurring_rendering,
+        // <==> DEBUG <==> //
+        () => {
+            let rel_loc = p5.Vector.sub(game().state().barrel.loc, game().state().tank.loc)
+
+            push()
+            translate(width / 2, height / 2)
+
+            rotate(game().state().tank.rot)
+            let rotated_rel_loc = p5.Vector.rotate(rel_loc, -game().state().tank.rot)
+
+            strokeWeight(2)
+            stroke(255, 0, 0)
+            line(rotated_rel_loc.x, rotated_rel_loc.y, 0, 0)
+
+            stroke(0, 255, 0)
+            line(rotated_rel_loc.x, rotated_rel_loc.y, game().state().tank.w/2, game().state().tank.h/2)
+            line(rotated_rel_loc.x, rotated_rel_loc.y, -game().state().tank.w/2, -game().state().tank.h/2)
+            line(rotated_rel_loc.x, rotated_rel_loc.y, -game().state().tank.w/2, game().state().tank.h/2)
+            line(rotated_rel_loc.x, rotated_rel_loc.y, game().state().tank.w/2, -game().state().tank.h/2)
+
+
+            pop()
+        }
     ])
 
     game().registerKeyBindings({

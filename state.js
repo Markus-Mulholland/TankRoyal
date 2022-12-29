@@ -1,11 +1,70 @@
 import {game} from "./frame/game";
-import {hasMovement} from "./frame/traits";
+import {hasLocation, hasMovement} from "./frame/traits";
 
 let state_obj = {
     init() {
         return new Promise(async (resolve, reject) => {
+            state().projectiles = {
+                ...game().traits.hasPhysics([
+                    () => {
+                        state().projectiles.fired.forEach((projectile, i, arr) => {
+                            arr[i].vel.add(arr[i].acc)
+                            arr[i].loc.add(arr[i].vel)
+                            arr[i].acc = createVector(0, 0)
+                        })
+                    },
+                    () => {
+                        let i = state().projectiles.fired.length
+                        while (i--) {
+                            if (
+                                (frameCount - state().projectiles.fired[i].frame_when_fired) * state().projectiles.fired[i].speed.mag()
+                                > state().projectiles.fired[i].range
+                            ) {
+                                state().projectiles.fired.splice(i, 1)
+                            }
+                        }
+                    }
+                ]),
+                ...game().traits.renders([
+                    () => {
+                        state().projectiles.fired.forEach(projectile => {
+                            fill(255, 0, 0)
+                            push()
+                            translate(width / 2, height / 2)
+                            let rel_loc = p5.Vector.sub(projectile.loc, state().tank.loc)
+                            ellipse(rel_loc.x, rel_loc.y, 10, 10)
+                            pop()
+                        })
+                    }
+                ]),
+                types: {
+                    STANDARD: {
+                        speed: createVector(0, 10),
+                        range: 200,
+                        frame_limit_per_shot: 50,
+                        damage: 10,
+                        create: () => {
+                            const {speed, range, frame_limit_per_shot} = state().projectiles.types.STANDARD
+                            return {
+                                ...game().traits.hasMovement(),
+                                frame_when_fired: frameCount,
+                                rot: 0,
+                                speed,
+                                range,
+                                frame_limit_per_shot
+                            }
+                        }
+                    }
+                },
+                fired: [],
+                register_projectile: projectile => {
+                    state().projectiles.fired.push(projectile)
+                }
+            }
+
+            // NOTE: Projectiles have to be initialized before the tank so that the projectile types are available when initializing the tank. Not sure I like this.
             state().tank = {
-                ...game().traits.hasMovement(),
+                ...game().traits.hasMovement(0, 0, 0, 0, 150, 150),
                 ...game().traits.hasPhysics([
                     () => { // Move
                         state().tank.vel.add(state().tank.acc)
@@ -49,7 +108,7 @@ let state_obj = {
 
                         fill(0)
                         ellipse(0, 0, 50, 50)
-                        rect(0, -state().tank.turret.barrel_h/2, 10, state().tank.turret.barrel_h)
+                        rect(0, -state().tank.turret.barrel.h / 2, 10, state().tank.turret.barrel.h)
                         pop()
                     }
                 ]),
@@ -98,18 +157,27 @@ let state_obj = {
                         }
                     ]
                 }),
+                turret: {
+                    rel_loc: createVector(0, 20),
+                    rot: 0,
+                    barrel: {
+                        h: 40,
+                        getEnd: () => {
+                            return createVector(0, state().tank.turret.barrel.h)
+                        }
+                    }
+                },
+                inventory: {
+                    magazine: {
+                        primary_projectile: state().projectiles.types.STANDARD
+                    }
+                },
                 w: 75,
                 h: 100,
                 rot: 0,
                 drag: 0.1,
                 speed: createVector(0, 2),
                 turn_speed: 1.2,
-                turret: {
-                    rel_loc: createVector(0, 20),
-                    rot: 0,
-                    barrel_h: 40
-                },
-                fire_rate: 10,
                 frame_when_last_fired: 0,
                 applyForce: force => {
                     state().tank.acc.add(force)
@@ -118,15 +186,21 @@ let state_obj = {
                     state().tank.rot += angle
                 },
                 fire: () => {
-                    if (frameCount - state().tank.frame_when_last_fired > state().tank.fire_rate) {
-                        let projectile = state().projectiles.types.STANDARD()
-                        projectile.loc = state().tank.loc.copy()
+                    if (frameCount - state().tank.frame_when_last_fired > state().tank.inventory.magazine.primary_projectile.frame_limit_per_shot) {
+                        let projectile = state().tank.inventory.magazine.primary_projectile.create()
+                        projectile.loc = p5.Vector.add(state().tank.loc.copy(), p5.Vector.rotate(state().tank.turret.barrel.getEnd(), state().tank.turret.rot+90))
                         projectile.vel = state().tank.vel.copy()
-                        projectile.acc = p5.Vector.rotate(projectile.speed, state().tank.turret.rot + 90)
+                        projectile.acc = p5.Vector.rotate(
+                            projectile.speed,
+                            state().tank.turret.rot + 90)
 
                         state().projectiles.register_projectile(projectile)
                         state().tank.frame_when_last_fired = frameCount
                     }
+                },
+                // This will be passed to a projectile object when the tank fires one. This ensures the logic for handling bullet collision is contained within the bullet
+                recordImpact: () => {
+
                 }
             }
 
@@ -134,99 +208,74 @@ let state_obj = {
                 ...game().traits.renders([
                     () => {
                         push()
-                        translate(width / 2, width / 2)
-                        rotate(state().tank.rot)
-                        push()
-                        translate(0, state().HUD.fire_cool_down_indicator.y_offset)
+                        translate(width / 2, height / 2)
 
-                        fill(0)
+                        let remaining_frames_mapped = map(
+                            frameCount - state().tank.frame_when_last_fired,
+                            0,
+                            state().tank.inventory.magazine.primary_projectile.frame_limit_per_shot,
+                            0,
+                            255,
+                            true
+                        )
+
+                        let below_c = color(255, 100, 0)
+                        fill(below_c)
                         rect(
-                            0,
-                            0,
+                            state().HUD.fire_cool_down_indicator.x_offset,
+                            state().HUD.fire_cool_down_indicator.y_offset,
                             state().HUD.fire_cool_down_indicator.w,
                             state().HUD.fire_cool_down_indicator.h
                         )
 
-                        fill(255)
-                        rectMode(CORNER)
+                        let above_c = color(100, 255, 0)
+                        above_c.setAlpha(remaining_frames_mapped)
+                        fill(above_c)
                         rect(
-                            -state().HUD.fire_cool_down_indicator.w / 2,
-                            -state().HUD.fire_cool_down_indicator.h / 2,
-                            map(
-                                frameCount - state().tank.frame_when_last_fired,
-                                0,
-                                state().tank.fire_rate,
-                                0,
-                                state().HUD.fire_cool_down_indicator.w,
-                                true
-                            ),
+                            state().HUD.fire_cool_down_indicator.x_offset,
+                            state().HUD.fire_cool_down_indicator.y_offset,
+                            state().HUD.fire_cool_down_indicator.w,
                             state().HUD.fire_cool_down_indicator.h
                         )
 
-                        pop()
+                        fill(0)
+                        rectMode(CORNER)
+                        rect(
+                            state().HUD.fire_cool_down_indicator.x_offset-state().HUD.fire_cool_down_indicator.w / 2,
+                            state().HUD.fire_cool_down_indicator.y_offset-state().HUD.fire_cool_down_indicator.h / 2,
+                            state().HUD.fire_cool_down_indicator.w,
+                            map(
+                                frameCount - state().tank.frame_when_last_fired,
+                                0,
+                                state().tank.inventory.magazine.primary_projectile.frame_limit_per_shot,
+                                0,
+                                state().HUD.fire_cool_down_indicator.h,
+                                true
+                            )
+
+                        )
+
                         pop()
                     }
                 ]),
                 fire_cool_down_indicator: {
-                    y_offset: state().tank.h / 2 + 20,
-                    w: 50,
-                    h: 5,
-                }
-            }
-
-            state().projectiles = {
-                ...game().traits.hasPhysics([
-                    () => {
-                        state().projectiles.fired.forEach((projectile, i, arr) => {
-                            arr[i].vel.add(arr[i].acc)
-                            arr[i].loc.add(arr[i].vel)
-                            arr[i].acc = createVector(0, 0)
-                        })
-                    },
-                    () => {
-                        let i = state().projectiles.fired.length
-                        while (i--) {
-                            if (
-                                (frameCount - state().projectiles.fired[i].frame_created) * state().projectiles.fired[i].speed.mag()
-                                    > state().projectiles.fired[i].range) {
-                                state().projectiles.fired.splice(i, 1)
-                            }
-                        }
-                    }
-                ]),
-                ...game().traits.renders([
-                    () => {
-                        state().projectiles.fired.forEach(projectile => {
-                            fill(255, 0, 0)
-                            push()
-                            translate(width / 2, height / 2)
-                            let rel_loc = p5.Vector.sub(projectile.loc, state().tank.loc)
-                            ellipse(rel_loc.x, rel_loc.y, 10, 10)
-                            pop()
-                        })
-                    }
-                ]),
-                types: {
-                    STANDARD: () => ({
-                        ...game().traits.hasMovement(),
-                        speed: createVector(0, 10),
-                        rot: 0,
-                        range: 300,
-                        frame_created: frameCount
-                    })
-                },
-                fired: [],
-                register_projectile: projectile => {
-                    state().projectiles.fired.push(projectile)
+                    x_offset: -width/2+30,
+                    y_offset: (height/2)-50-20,
+                    w: 20,
+                    h: 100,
                 }
             }
 
             state().barrel = {
-                loc: createVector(50, 50),
+                ...game().traits.hasLocation(50, 50),
                 ...game().traits.renders([
                     () => {
+                        push()
                         let rel_loc = p5.Vector.sub(state().barrel.loc, state().tank.loc)
+                        translate(width / 2, height / 2)
+                        fill(100)
                         ellipse(rel_loc.x, rel_loc.y, 50, 50)
+                        pop()
                     }
                 ])
             }
@@ -236,6 +285,7 @@ let state_obj = {
                     J_D: [
                         () => {
                             console.log(state())
+                            debugger
                         }
                     ],
                 })

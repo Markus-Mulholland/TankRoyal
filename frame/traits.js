@@ -1,17 +1,14 @@
-export const hasLocation = () => {
+export const hasLocation = (x, y) => {
     return {
-        loc: createVector(0, 0)
+        loc: createVector(x, y)
     }
 }
 
-export const hasMovement = (
-    acc = createVector(0, 0),
-    vel = createVector(0, 0),
-    loc = createVector(0, 0)) => {
+export const hasMovement = (acc_x=0, acc_y=0, vel_x=0, vel_y=0, loc_x=0, loc_y=0) => {
     return {
-        loc: loc,
-        vel: vel,
-        acc: acc,
+        loc: createVector(loc_x, loc_y),
+        vel: createVector(vel_x, vel_y),
+        acc: createVector(acc_x, acc_y),
     }
 }
 

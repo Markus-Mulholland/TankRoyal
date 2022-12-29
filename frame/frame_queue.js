@@ -2,7 +2,7 @@ export const frame_queue = () => {
     return {
         recurring_jobs: [],
         queue: [],
-        job: job => ({job: job, run: false}),
+        job: fn => ({job: fn, run: false}),
         dispatchRecurringJobs: function () {
             this.queue =
                 this.queue.concat(this.recurring_jobs)
