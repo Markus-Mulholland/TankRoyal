@@ -7,13 +7,6 @@ let state_obj = {
             state().projectiles = {
                 ...game().traits.hasPhysics([
                     () => {
-                        state().projectiles.fired.forEach((projectile, i, arr) => {
-                            arr[i].vel.add(arr[i].acc)
-                            arr[i].loc.add(arr[i].vel)
-                            arr[i].acc = createVector(0, 0)
-                        })
-                    },
-                    () => {
                         let i = state().projectiles.fired.length
                         while (i--) {
                             if (
@@ -21,7 +14,14 @@ let state_obj = {
                                 > state().projectiles.fired[i].range
                             ) {
                                 state().projectiles.fired.splice(i, 1)
+                                continue
                             }
+
+                            state().projectiles.fired[i].vel.add(state().projectiles.fired[i].acc)
+                            state().projectiles.fired[i].loc.add(state().projectiles.fired[i].vel)
+                            state().projectiles.fired[i].acc = createVector(0, 0)
+
+
                         }
                     }
                 ]),
@@ -40,8 +40,8 @@ let state_obj = {
                 types: {
                     STANDARD: {
                         speed: createVector(0, 10),
-                        range: 200,
-                        frame_limit_per_shot: 50,
+                        range: 600,
+                        frame_limit_per_shot: 20,
                         damage: 10,
                         create: () => {
                             const {speed, range, frame_limit_per_shot} = state().projectiles.types.STANDARD
@@ -80,7 +80,7 @@ let state_obj = {
                     () => { // Handle Turret Rotation
                         let mouse_loc = p5.Vector.sub(
                             createVector(0, 0),
-                            createVector(mouseX - width / 2, mouseY - width / 2))
+                            createVector(mouseX - width / 2, mouseY - height / 2))
                         state().tank.turret.rot = mouse_loc.heading()
                     }
                 ]),
@@ -94,16 +94,11 @@ let state_obj = {
                         translate(width / 2, height / 2)
                         rotate(state().tank.rot)
                         rect(0, 0, state().tank.w, state().tank.h)
-
-                        fill(0)
-                        rect(0, -50, 20, 10)
-                        rect(-state().tank.w / 2 - 7, 0, 14, 80)
-                        rect(state().tank.w / 2 + 7, 0, 14, 80)
                         pop()
                     },
                     () => {
                         push()
-                        translate(width / 2, width / 2)
+                        translate(width / 2, height / 2)
                         rotate(state().tank.turret.rot - 90)
 
                         fill(0)
@@ -199,7 +194,7 @@ let state_obj = {
                     }
                 },
                 // This will be passed to a projectile object when the tank fires one. This ensures the logic for handling bullet collision is contained within the bullet
-                recordImpact: () => {
+                impactCallback: () => {
 
                 }
             }
@@ -238,7 +233,7 @@ let state_obj = {
                             state().HUD.fire_cool_down_indicator.h
                         )
 
-                        fill(0)
+                        fill(200)
                         rectMode(CORNER)
                         rect(
                             state().HUD.fire_cool_down_indicator.x_offset-state().HUD.fire_cool_down_indicator.w / 2,
@@ -252,7 +247,6 @@ let state_obj = {
                                 state().HUD.fire_cool_down_indicator.h,
                                 true
                             )
-
                         )
 
                         pop()
@@ -274,10 +268,11 @@ let state_obj = {
                         let rel_loc = p5.Vector.sub(state().barrel.loc, state().tank.loc)
                         translate(width / 2, height / 2)
                         fill(100)
-                        ellipse(rel_loc.x, rel_loc.y, 50, 50)
+                        ellipse(rel_loc.x, rel_loc.y, state().barrel.r*2, state().barrel.r*2)
                         pop()
                     }
-                ])
+                ]),
+                r: 25
             }
 
             state().debugger = {
