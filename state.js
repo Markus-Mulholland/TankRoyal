@@ -1,5 +1,5 @@
-import {game} from "./frame/game";
-import {hasLocation, hasMovement} from "./frame/traits";
+import {game} from "./frame/game.js";
+import {hasLocation, hasMovement} from "./frame/traits.js";
 
 let state_obj = {
     init() {
@@ -20,8 +20,6 @@ let state_obj = {
                             state().projectiles.fired[i].vel.add(state().projectiles.fired[i].acc)
                             state().projectiles.fired[i].loc.add(state().projectiles.fired[i].vel)
                             state().projectiles.fired[i].acc = createVector(0, 0)
-
-
                         }
                     }
                 ]),
@@ -142,6 +140,7 @@ let state_obj = {
                         () => {
                             if (game().keylogger().pressed_keys.indexOf('D') > -1
                                 && game().keylogger().pressed_keys.indexOf('A') < 0) {
+                                debugger
                                 state().tank.turn(state().tank.turn_speed)
                             }
                         }

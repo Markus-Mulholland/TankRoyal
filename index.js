@@ -3,8 +3,8 @@
 //                     <>  <>
 
 import {game} from './frame/game.js'
-import {circ_rec} from "./frame/collision";
-import {v} from "./frame/utils";
+import {circ_rec} from "./frame/collision.js";
+import {v} from "./frame/utils.js";
 
 window.preload = async () => {
     await game().init()
@@ -29,7 +29,7 @@ window.preload = async () => {
             //     game().state().tank.rot,
             // ))
 
-            // Draws line representing above vector
+            //Draws line representing above vector
             // stroke(50)
             // strokeWeight(10)
             // line(rel_loc.x, rel_loc.y, 0, 0)
@@ -85,6 +85,9 @@ window.preload = async () => {
             ...game().state().tank.bindings.M__D
         ]
     })
+
+    game().collision().registerCollider(game().state().tank, "RECT", ()=>{console.log('hit')})
+    game().collision().registerCollider(game().state().barrel, "CIRC", ()=>{console.log('hit c')})
 }
 
 window.setup = () => {

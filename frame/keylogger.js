@@ -1,4 +1,4 @@
-import {game} from "./game";
+import {game} from "./game.js";
 
 let keylogger_obj = {
     init() {
@@ -18,6 +18,7 @@ let keylogger_obj = {
 
             keylogger().run = () => {
                 keylogger().pressed_keys.forEach(key => {
+                    debugger
                     key += "_D"
                     if (keylogger().bindings[key]) {
                         keylogger().bindings[key].forEach(func => func())
@@ -51,7 +52,6 @@ let keylogger_obj = {
                 let mouse_binding_key_index = keylogger().pressed_keys.indexOf(mouse_binding_key);
                 keylogger().pressed_keys.splice(mouse_binding_key_index, 1);
             }
-
 
             window.keyPressed = () => {
                 game().keylogger().keyPressed(key)
